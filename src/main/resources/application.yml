@@ -1,0 +1,35 @@
+spring:
+  application:
+    name: attendance-api
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/attendance_db}
+    username: ${DB_USERNAME:attendance_user}
+    password: ${DB_PASSWORD:attendance_pass}
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+  thymeleaf:
+    cache: false
+
+server:
+  port: ${SERVER_PORT:8080}
+
+app:
+  timezone: ${APP_TIMEZONE:America/Santo_Domingo}
+  jwt:
+    secret: ${JWT_SECRET:ChangeThisSecretKeyToAStrongRandomValueAtLeast32CharsLong2026!}
+    expiration-ms: ${JWT_EXPIRATION_MS:86400000}
+  seed:
+    enabled: ${APP_SEED_ENABLED:true}
+    demo-attendance: ${APP_SEED_DEMO_ATTENDANCE:true}
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+    operations-sorter: method
+    tags-sorter: alpha

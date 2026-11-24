@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Historial de Asistencia')}"></head>
+<body>
+<div class="app-shell">
+    <aside th:replace="~{fragments/layout :: sidebar}"></aside>
+
+    <main class="main-content">
+        <div class="page-header">
+            <div>
+                <h1 class="page-title">Historial de Asistencia</h1>
+                <p class="page-subtitle" th:text="${currentUser.admin} ? 'Consulta y audita registros de todo el personal.' : 'Consulta tu historial personal de entradas y salidas.'"></p>
+            </div>
+        </div>
+
+        <div th:replace="~{fragments/layout :: alerts}"></div>
+
+        <section class="card">
+            <form method="get" th:action="@{/attendance/history}" class="form-grid">
+                <div class="form-group" th:if="${currentUser.admin}">
+                    <label class="form-label">Empleado</label>
+                    <select class="form-control" name="employeeId">
+                        <option value="">Todos</option>
+                        <option th:each="e : ${employees}" th:value="${e.id}"
+                                th:text="${e.employeeCode + ' - ' + e.fullName}"
+                                th:selected="${selectedEmployeeId == e.id}"></option>
+                    </select>
+                </div>
+                <div class="form-group" th:if="${currentUser.admin}">
+                    <label class="form-label">Departamento</label>
+                    <select class="form-control" name="department">
+                        <option value="">Todos</option>
+                        <option th:each="d : ${departments}" th:value="${d}" th:text="${d}"
+                                th:selected="${selectedDepartment == d}"></option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Desde</label>
+                    <input class="form-control" type="date" name="from" th:value="${from}"/>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Hasta</label>
+                    <input class="form-control" type="date" name="to" th:value="${to}"/>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Puntualidad</label>
+                    <select class="form-control" name="status">
+                        <option value="">Todos</option>
+                        <option value="ON_TIME" th:selected="${selectedStatus != null and selectedStatus.name() == 'ON_TIME'}">Puntual</option>
+                        <option value="LATE" th:selected="${selectedStatus != null and selectedStatus.name() == 'LATE'}">Tardanza</option>
+                    </select>
+                </div>
+                <div class="form-group" th:if="${currentUser.admin}">
+                    <label class="form-label">Solo jornadas abiertas</label>
+                    <select class="form-control" name="openOnly">
+                        <option value="">No</option>
+                        <option value="true" th:selected="${openOnly}">Si (sin salida)</option>
+                    </select>
+                </div>
+                <div class="form-group" style="flex-direction: row; gap: 8px;">
+                    <button type="submit" class="btn btn-primary" style="flex:1;">Filtrar</button>
+                    <a class="btn btn-outline" th:href="@{/attendance/history}">Limpiar</a>
+                </div>
+            </form>
+        </section>
+
+        <section class="card">
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                    <tr>
+                        <th>Fecha</th>
+                        <th th:if="${currentUser.admin}">Empleado</th>
+                        <th th:if="${currentUser.admin}">Depto.</th>
+                        <th>Turno</th>
+                        <th>Entrada</th>
+                        <th>Salida</th>
+                        <th>Estado</th>
+                        <th>Trabajado</th>
+                        <th>Extras</th>
+                        <th>Notas / Auditoria</th>
+                        <th th:if="${currentUser.admin}">Accion</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:if="${#lists.isEmpty(historyPage.content)}">
+                        <td colspan="11" style="text-align:center; color:#64748b;">No hay registros para los filtros seleccionados.</td>
+                    </tr>
+                    <tr th:each="r : ${historyPage.content}">
+                        <td th:text="${r.workDate}"></td>
+                        <td th:if="${currentUser.admin}">
+                            <strong th:text="${r.employeeName}"></strong><br/>
+                            <small style="color:#64748b;" th:text="${r.employeeCode}"></small>
+                        </td>
+                        <td th:if="${currentUser.admin}" th:text="${r.department}"></td>
+                        <td th:text="${r.shiftName}"></td>
+                        <td th:text="${r.localCheckInTime}"></td>
+                        <td th:text="${r.localCheckOutTime != null ? r.localCheckOutTime : 'Sin salida'}"></td>
+                        <td>
+                            <span th:if="${r.arrivalStatus.name() == 'ON_TIME'}" class="badge badge-success">Puntual</span>
+                            <span th:if="${r.arrivalStatus.name() == 'LATE'}" class="badge badge-warning"
+                                  th:text="'Tarde (+' + ${r.lateMinutes} + 'm)'"></span>
+                            <span th:if="${r.open}" class="badge badge-info">Abierto</span>
+                        </td>
+                        <td th:text="${r.formatWorkedDuration()}"></td>
+                        <td th:text="${r.overtimeMinutes > 0 ? r.formatOvertimeDuration() : '—'}"></td>
+                        <td>
+                            <div th:text="${r.notes != null ? r.notes : '—'}"></div>
+                            <small th:if="${r.adjustedByName != null}" style="color:#4f46e5;"
+                                   th:text="'Ajustado por: ' + ${r.adjustedByName}"></small>
+                        </td>
+                        <td th:if="${currentUser.admin}">
+                            <button type="button" class="btn btn-outline btn-sm"
+                                    data-open-adjust
+                                    th:attr="data-record-id=${r.id},data-employee-name=${r.employeeName},data-work-date=${r.workDate},data-check-in=${r.localCheckInTime},data-check-out=${r.localCheckOutTime}">
+                                Ajustar
+                            </button>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="pagination" th:if="${historyPage.totalPages > 0}">
+                <span th:text="'Pagina ' + (${historyPage.page} + 1) + ' de ' + ${historyPage.totalPages} + ' (' + ${historyPage.totalElements} + ' registros)'"></span>
+                <div style="display:flex; gap:8px;">
+                    <a class="btn btn-outline btn-sm" th:if="${!historyPage.first}"
+                       th:href="@{/attendance/history(page=${historyPage.page - 1},employeeId=${selectedEmployeeId},department=${selectedDepartment},from=${from},to=${to},status=${selectedStatus},openOnly=${openOnly ? true : null})}">
+                        &larr; Anterior
+                    </a>
+                    <a class="btn btn-outline btn-sm" th:if="${!historyPage.last}"
+                       th:href="@{/attendance/history(page=${historyPage.page + 1},employeeId=${selectedEmployeeId},department=${selectedDepartment},from=${from},to=${to},status=${selectedStatus},openOnly=${openOnly ? true : null})}">
+                        Siguiente &rarr;
+                    </a>
+                </div>
+            </div>
+        </section>
+    </main>
+</div>
+
+<!-- Modal Ajuste Manual (ADMIN) -->
+<div class="modal-backdrop" id="adjustModal" th:if="${currentUser.admin}">
+    <div class="modal-card">
+        <h3 style="margin-bottom: 4px;">Ajuste Manual de Asistencia</h3>
+        <p id="adjustEmployeeLabel" style="font-size: 13px; color: #64748b; margin-bottom: 16px;"></p>
+
+        <form id="adjustForm" method="post">
+            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+            <input type="hidden" name="returnTo" value="/attendance/history"/>
+
+            <div class="form-group" style="margin-bottom: 12px;">
+                <label class="form-label" for="adjustCheckIn">Hora de Entrada</label>
+                <input class="form-control" type="time" id="adjustCheckIn" name="checkInTime"/>
+            </div>
+            <div class="form-group" style="margin-bottom: 12px;">
+                <label class="form-label" for="adjustCheckOut">Hora de Salida</label>
+                <input class="form-control" type="time" id="adjustCheckOut" name="checkOutTime"/>
+            </div>
+            <div class="form-group" style="margin-bottom: 18px;">
+                <label class="form-label" for="adjustNotes">Motivo del ajuste (obligatorio)</label>
+                <textarea class="form-control" id="adjustNotes" name="notes" rows="3" required
+                          placeholder="Ej: Empleado olvido marcar salida al finalizar jornada"></textarea>
+            </div>
+
+            <div style="display:flex; justify-content:flex-end; gap:8px;">
+                <button type="button" class="btn btn-outline" data-close-modal>Cancelar</button>
+                <button type="submit" class="btn btn-primary">Guardar Ajuste</button>
+            </div>
+        </form>
+    </div>
+</div>
+</body>
+</html>

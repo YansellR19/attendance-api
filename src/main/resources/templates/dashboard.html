@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Panel Principal')}"></head>
+<body>
+<div class="app-shell">
+    <aside th:replace="~{fragments/layout :: sidebar}"></aside>
+
+    <main class="main-content">
+        <div class="page-header">
+            <div>
+                <h1 class="page-title" th:text="'Hola, ' + ${profile.fullName}">Hola, Empleado</h1>
+                <p class="page-subtitle">
+                    <span th:text="${profile.department}">Departamento</span> ·
+                    Turno asignado: <strong th:text="${profile.shift.name}">Turno</strong>
+                    (<span th:text="${profile.shift.startTime}">09:00</span> - <span th:text="${profile.shift.endTime}">18:00</span>,
+                    tolerancia <span th:text="${profile.shift.graceMinutes}">10</span> min)
+                </p>
+            </div>
+        </div>
+
+        <div th:replace="~{fragments/layout :: alerts}"></div>
+
+        <!-- Panel de Marcacion -->
+        <section class="clock-panel">
+            <div>
+                <div class="clock-meta" th:text="'Fecha laboral: ' + ${todayDate} + ' (' + ${timezone} + ')'">Fecha</div>
+                <div class="live-clock" id="liveClock" th:attr="data-timezone=${timezone}">--:--:--</div>
+                <div class="clock-meta" style="margin-top: 10px;">
+                    <span th:if="${todayRecord == null}" class="badge badge-neutral">Sin entrada registrada hoy</span>
+                    <span th:if="${todayRecord != null and todayRecord.open}">
+                        <span class="badge badge-info">Jornada en curso</span>
+                        Entrada: <strong th:text="${todayRecord.localCheckInTime}">09:00</strong>
+                        <span th:if="${todayRecord.lateMinutes > 0}" th:text="' (Tardanza: ' + ${todayRecord.lateMinutes} + ' min)'"></span>
+                    </span>
+                    <span th:if="${todayRecord != null and !todayRecord.open}">
+                        <span class="badge badge-success">Jornada completada</span>
+                        <span th:text="${todayRecord.localCheckInTime} + ' - ' + ${todayRecord.localCheckOutTime}">09:00 - 18:00</span> ·
+                        Trabajado: <strong th:text="${todayRecord.formatWorkedDuration()}">8h 00m</strong>
+                        <span th:if="${todayRecord.overtimeMinutes > 0}" th:text="' | Extras: ' + ${todayRecord.formatOvertimeDuration()}"></span>
+                    </span>
+                </div>
+            </div>
+
+            <div class="clock-actions">
+                <form th:if="${todayRecord == null}" th:action="@{/attendance/check-in}" method="post" style="display:flex;flex-direction:column;gap:10px;">
+                    <input type="text" name="notes" class="form-control form-control-dark" placeholder="Nota opcional de entrada..."/>
+                    <button type="submit" class="btn btn-success btn-lg">Marcar Entrada</button>
+                </form>
+
+                <form th:if="${todayRecord != null and todayRecord.open}" th:action="@{/attendance/check-out}" method="post" style="display:flex;flex-direction:column;gap:10px;">
+                    <input type="text" name="notes" class="form-control form-control-dark" placeholder="Nota opcional de salida..."/>
+                    <button type="submit" class="btn btn-warning btn-lg">Marcar Salida</button>
+                </form>
+
+                <div th:if="${todayRecord != null and !todayRecord.open}" style="text-align:right; color:#cbd5e1; font-size:13px;">
+                    Has completado tu registro de entrada y salida de hoy.<br/>
+                    <a th:href="@{/attendance/history}" style="color:#a5b4fc; font-weight:600;">Ver historial completo &rarr;</a>
+                </div>
+            </div>
+        </section>
+
+        <!-- KPIs Personales del Mes -->
+        <section class="kpi-grid">
+            <div class="kpi-card">
+                <div class="kpi-label">Mi Asistencia del Mes</div>
+                <div class="kpi-value primary" th:text="${myMonthlyStats.attendanceRate} + '%'">100%</div>
+                <div class="kpi-sub" th:text="${myMonthlyStats.attendedDays} + ' de ' + ${myMonthlyStats.scheduledWorkDays} + ' dias laborables'"></div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-label">Horas Trabajadas (Mes)</div>
+                <div class="kpi-value" th:text="${myMonthlyStats.formatTotalWorked()}">0h 00m</div>
+                <div class="kpi-sub" th:text="'Promedio: ' + ${myMonthlyStats.averageWorkedHours} + ' h/dia'"></div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-label">Horas Extra (Mes)</div>
+                <div class="kpi-value success" th:text="${myMonthlyStats.formatTotalOvertime()}">0h 00m</div>
+                <div class="kpi-sub">Acumulado sobre jornada esperada</div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-label">Tardanzas (Mes)</div>
+                <div class="kpi-value warning" th:text="${myMonthlyStats.lateDays}">0</div>
+                <div class="kpi-sub" th:text="${myMonthlyStats.totalLateMinutes} + ' min acumulados'"></div>
+            </div>
+        </section>
+
+        <!-- Resumen Empresa Hoy (Solo ADMIN) -->
+        <section class="card" th:if="${todaySummary != null}">
+            <div class="card-title">
+                <span>Resumen de la Empresa Hoy (<span th:text="${todaySummary.date}"></span>)</span>
+                <a class="btn btn-outline btn-sm" th:href="@{/reports/daily}">Abrir Reporte Diario</a>
+            </div>
+            <div class="kpi-grid" style="margin-bottom: 0;">
+                <div class="kpi-card">
+                    <div class="kpi-label">Programados</div>
+                    <div class="kpi-value" th:text="${todaySummary.scheduledEmployees}">0</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-label">Presentes</div>
+                    <div class="kpi-value success" th:text="${todaySummary.presentCount}">0</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-label">Tardanzas</div>
+                    <div class="kpi-value warning" th:text="${todaySummary.lateCount}">0</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-label">Ausentes</div>
+                    <div class="kpi-value danger" th:text="${todaySummary.absentCount}">0</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-label">Sin Salida</div>
+                    <div class="kpi-value primary" th:text="${todaySummary.openCount}">0</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Ultimos Registros -->
+        <section class="card">
+            <div class="card-title">
+                <span>Mis Ultimos Registros</span>
+                <a class="btn btn-outline btn-sm" th:href="@{/attendance/history}">Ver todo</a>
+            </div>
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                    <tr>
+                        <th>Fecha</th>
+                        <th>Entrada</th>
+                        <th>Salida</th>
+                        <th>Estado</th>
+                        <th>Trabajado</th>
+                        <th>Extras</th>
+                        <th>Notas</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:if="${#lists.isEmpty(recentRecords)}">
+                        <td colspan="7" style="text-align:center; color:#64748b;">Aun no tienes registros de asistencia.</td>
+                    </tr>
+                    <tr th:each="r : ${recentRecords}">
+                        <td th:text="${r.workDate}">2026-11-24</td>
+                        <td th:text="${r.localCheckInTime}">09:00</td>
+                        <td th:text="${r.localCheckOutTime != null ? r.localCheckOutTime : 'Pendiente'}">18:00</td>
+                        <td>
+                            <span th:if="${r.arrivalStatus.name() == 'ON_TIME'}" class="badge badge-success">Puntual</span>
+                            <span th:if="${r.arrivalStatus.name() == 'LATE'}" class="badge badge-warning"
+                                  th:text="'Tarde (+' + ${r.lateMinutes} + 'm)'">Tarde</span>
+                        </td>
+                        <td th:text="${r.formatWorkedDuration()}">8h 00m</td>
+                        <td th:text="${r.overtimeMinutes > 0 ? r.formatOvertimeDuration() : '—'}">—</td>
+                        <td th:text="${r.notes != null ? r.notes : '—'}">—</td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+</div>
+</body>
+</html>

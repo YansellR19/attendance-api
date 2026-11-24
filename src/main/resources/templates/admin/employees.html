@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Gestion de Empleados')}"></head>
+<body>
+<div class="app-shell">
+    <aside th:replace="~{fragments/layout :: sidebar}"></aside>
+
+    <main class="main-content">
+        <div class="page-header">
+            <div>
+                <h1 class="page-title">Gestion de Empleados</h1>
+                <p class="page-subtitle">Alta de empleados, asignacion de turnos y control de estado activo.</p>
+            </div>
+        </div>
+
+        <div th:replace="~{fragments/layout :: alerts}"></div>
+
+        <!-- Formulario Nuevo Empleado -->
+        <section class="card">
+            <div class="card-title">Registrar Nuevo Empleado</div>
+            <form method="post" th:action="@{/admin/employees}" class="form-grid">
+                <div class="form-group">
+                    <label class="form-label">Codigo</label>
+                    <input class="form-control" type="text" name="employeeCode" placeholder="EMP-005" required/>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Nombre Completo</label>
+                    <input class="form-control" type="text" name="fullName" placeholder="Luis Martinez" required/>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Correo</label>
+                    <input class="form-control" type="email" name="email" placeholder="luis@asistencia.com" required/>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Contrasena inicial</label>
+                    <input class="form-control" type="password" name="password" minlength="6" placeholder="Minimo 6 caracteres" required/>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Departamento</label>
+                    <input class="form-control" type="text" name="department" placeholder="Ingenieria" required/>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Rol</label>
+                    <select class="form-control" name="role" required>
+                        <option th:each="r : ${roles}" th:value="${r}" th:text="${r}"></option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Turno</label>
+                    <select class="form-control" name="shiftId" required>
+                        <option th:each="s : ${shifts}" th:value="${s.id}"
+                                th:text="${s.name + ' (' + s.startTime + '-' + s.endTime + ')'}"></option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <button type="submit" class="btn btn-primary">Crear Empleado</button>
+                </div>
+            </form>
+        </section>
+
+        <!-- Listado de Empleados -->
+        <section class="card">
+            <div class="card-title">Directorio de Empleados</div>
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                    <tr>
+                        <th>Codigo</th>
+                        <th>Nombre</th>
+                        <th>Correo</th>
+                        <th>Departamento</th>
+                        <th>Rol</th>
+                        <th>Turno</th>
+                        <th>Estado</th>
+                        <th>Accion</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="e : ${employees}">
+                        <td th:text="${e.employeeCode}"></td>
+                        <td><strong th:text="${e.fullName}"></strong></td>
+                        <td th:text="${e.email}"></td>
+                        <td th:text="${e.department}"></td>
+                        <td>
+                            <span class="badge" th:classappend="${e.role.name() == 'ADMIN'} ? ' badge-info' : ' badge-neutral'"
+                                  th:text="${e.role}"></span>
+                        </td>
+                        <td th:text="${e.shift.name}"></td>
+                        <td>
+                            <span th:if="${e.active}" class="badge badge-success">Activo</span>
+                            <span th:if="${!e.active}" class="badge badge-danger">Inactivo</span>
+                        </td>
+                        <td>
+                            <form method="post" th:action="@{/admin/employees/{id}/status(id=${e.id})}">
+                                <input type="hidden" name="active" th:value="${!e.active}"/>
+                                <button type="submit" class="btn btn-outline btn-sm"
+                                        th:text="${e.active} ? 'Desactivar' : 'Activar'"></button>
+                            </form>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+</div>
+</body>
+</html>

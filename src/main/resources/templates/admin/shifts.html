@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Turnos y Horarios')}"></head>
+<body>
+<div class="app-shell">
+    <aside th:replace="~{fragments/layout :: sidebar}"></aside>
+
+    <main class="main-content">
+        <div class="page-header">
+            <div>
+                <h1 class="page-title">Turnos y Horarios</h1>
+                <p class="page-subtitle">Define jornadas laborales, tolerancia de tardanza, descanso y umbral de horas extra.</p>
+            </div>
+        </div>
+
+        <div th:replace="~{fragments/layout :: alerts}"></div>
+
+        <!-- Formulario Nuevo Turno -->
+        <section class="card">
+            <div class="card-title">Crear Nuevo Turno</div>
+            <form method="post" th:action="@{/admin/shifts}">
+                <div class="form-grid" style="margin-bottom: 14px;">
+                    <div class="form-group">
+                        <label class="form-label">Nombre del turno</label>
+                        <input class="form-control" type="text" name="name" placeholder="Vespertino (13:00 - 21:00)" required/>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Hora Inicio</label>
+                        <input class="form-control" type="time" name="startTime" value="09:00" required/>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Hora Fin</label>
+                        <input class="form-control" type="time" name="endTime" value="18:00" required/>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Tolerancia (min)</label>
+                        <input class="form-control" type="number" name="graceMinutes" value="10" min="0" max="180" required/>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Descanso / Almuerzo (min)</label>
+                        <input class="form-control" type="number" name="breakMinutes" value="60" min="0" max="240" required/>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Jornada esperada (min)</label>
+                        <input class="form-control" type="number" name="expectedWorkMinutes" value="480" min="60" max="960" required/>
+                    </div>
+                </div>
+
+                <div class="form-group" style="margin-bottom: 16px;">
+                    <label class="form-label">Dias laborales</label>
+                    <div class="checkbox-row">
+                        <label class="checkbox-chip" th:each="day : ${allDays}">
+                            <input type="checkbox" name="workDays" th:value="${day}"
+                                   th:checked="${day.value <= 5}"/>
+                            <span th:text="${day}"></span>
+                        </label>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn btn-primary">Guardar Turno</button>
+            </form>
+        </section>
+
+        <!-- Listado de Turnos -->
+        <section class="card">
+            <div class="card-title">Turnos Configurados</div>
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                    <tr>
+                        <th>Nombre</th>
+                        <th>Horario</th>
+                        <th>Tolerancia</th>
+                        <th>Descanso</th>
+                        <th>Esperado</th>
+                        <th>Dias Laborales</th>
+                        <th>Estado</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="s : ${shifts}">
+                        <td><strong th:text="${s.name}"></strong></td>
+                        <td th:text="${s.startTime} + ' - ' + ${s.endTime}"></td>
+                        <td th:text="${s.graceMinutes} + ' min'"></td>
+                        <td th:text="${s.breakMinutes} + ' min'"></td>
+                        <td th:text="${s.expectedWorkMinutes} + ' min (' + (${s.expectedWorkMinutes} / 60) + 'h)'"></td>
+                        <td>
+                            <span th:each="d : ${s.workDays}" class="badge badge-neutral"
+                                  style="margin-right:4px;" th:text="${#strings.substring(d.name(), 0, 3)}"></span>
+                        </td>
+                        <td>
+                            <span th:if="${s.active}" class="badge badge-success">Activo</span>
+                            <span th:if="${!s.active}" class="badge badge-danger">Inactivo</span>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+</div>
+</body>
+</html>

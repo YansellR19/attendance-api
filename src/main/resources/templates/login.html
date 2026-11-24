@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Iniciar Sesion | Control de Asistencia</title>
+    <link rel="stylesheet" th:href="@{/css/app.css}"/>
+    <script th:src="@{/js/app.js}" defer></script>
+</head>
+<body class="login-body">
+
+<div class="login-card">
+    <div class="brand" style="border-bottom: none; padding: 0; margin-bottom: 22px;">
+        <div class="brand-icon">CA</div>
+        <div>
+            <div class="brand-title" style="color: #0f172a; font-size: 18px;">Control de Asistencia</div>
+            <div class="brand-subtitle">Portal de Empleados y Administracion</div>
+        </div>
+    </div>
+
+    <div th:if="${param.error}" class="alert alert-danger">
+        Correo o contrasena incorrectos, o cuenta desactivada.
+    </div>
+    <div th:if="${param.logout}" class="alert alert-success">
+        Sesion cerrada correctamente.
+    </div>
+
+    <form th:action="@{/login}" method="post">
+        <div class="form-group" style="margin-bottom: 14px;">
+            <label class="form-label" for="username">Correo corporativo</label>
+            <input class="form-control" type="email" id="username" name="username" placeholder="nombre@asistencia.com" required autofocus/>
+        </div>
+        <div class="form-group" style="margin-bottom: 20px;">
+            <label class="form-label" for="password">Contrasena</label>
+            <input class="form-control" type="password" id="password" name="password" placeholder="••••••••" required/>
+        </div>
+        <button type="submit" class="btn btn-primary btn-lg" style="width: 100%;">Ingresar</button>
+    </form>
+
+    <div class="demo-box">
+        <strong>Accesos de demostracion incluidos:</strong>
+        <div style="margin-top: 6px;">
+            Admin: <code>admin@asistencia.com</code> / <code>Admin123!</code><br/>
+            Empleado: <code>ana.garcia@asistencia.com</code> / <code>Empleado123!</code>
+        </div>
+        <div class="demo-buttons">
+            <button type="button" class="btn btn-outline btn-sm" style="flex:1;"
+                    onclick="fillDemoCredentials('admin@asistencia.com','Admin123!')">Usar Admin</button>
+            <button type="button" class="btn btn-outline btn-sm" style="flex:1;"
+                    onclick="fillDemoCredentials('ana.garcia@asistencia.com','Empleado123!')">Usar Empleado</button>
+        </div>
+        <div style="margin-top: 10px; text-align: center;">
+            <a th:href="@{/swagger-ui.html}" style="color: #4f46e5; text-decoration: none; font-weight: 600;">
+                Ver documentacion REST API (Swagger UI) &rarr;
+            </a>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>

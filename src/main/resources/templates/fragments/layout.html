@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head th:fragment="head(title)">
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title th:text="${title} + ' | Control de Asistencia'">Control de Asistencia</title>
+    <link rel="stylesheet" th:href="@{/css/app.css}"/>
+    <script th:src="@{/js/app.js}" defer></script>
+</head>
+<body>
+
+<aside th:fragment="sidebar" class="sidebar">
+    <div class="brand">
+        <div class="brand-icon">CA</div>
+        <div>
+            <div class="brand-title">Control Asistencia</div>
+            <div class="brand-subtitle">Gestion de Empleados</div>
+        </div>
+    </div>
+
+    <div class="nav-section">General</div>
+    <a class="nav-link" th:href="@{/dashboard}" th:classappend="${currentPath == '/dashboard'} ? ' active'">
+        Panel y Marcacion
+    </a>
+    <a class="nav-link" th:href="@{/attendance/history}" th:classappend="${#strings.startsWith(currentPath, '/attendance')} ? ' active'">
+        Historial de Asistencia
+    </a>
+    <a class="nav-link" th:href="@{/reports/monthly}" th:classappend="${#strings.startsWith(currentPath, '/reports/monthly')} ? ' active'">
+        Estadisticas Mensuales
+    </a>
+
+    <div th:if="${currentUser != null and currentUser.admin}">
+        <div class="nav-section">Administracion</div>
+        <a class="nav-link" th:href="@{/reports/daily}" th:classappend="${#strings.startsWith(currentPath, '/reports/daily')} ? ' active'">
+            Reporte Diario
+        </a>
+        <a class="nav-link" th:href="@{/admin/employees}" th:classappend="${#strings.startsWith(currentPath, '/admin/employees')} ? ' active'">
+            Empleados
+        </a>
+        <a class="nav-link" th:href="@{/admin/shifts}" th:classappend="${#strings.startsWith(currentPath, '/admin/shifts')} ? ' active'">
+            Turnos y Horarios
+        </a>
+    </div>
+
+    <div class="nav-section">Desarrolladores</div>
+    <a class="nav-link" th:href="@{/swagger-ui.html}" target="_blank">
+        Documentacion API (Swagger)
+    </a>
+
+    <div class="sidebar-footer" th:if="${currentUser != null}">
+        <div class="user-pill">
+            <div class="user-pill-name" th:text="${currentUser.fullName}">Usuario</div>
+            <div class="user-pill-meta">
+                <span th:text="${currentUser.employeeCode}">EMP-001</span> ·
+                <span th:text="${currentUser.role}">ROLE</span>
+            </div>
+        </div>
+        <form th:action="@{/logout}" method="post">
+            <button type="submit" class="btn btn-ghost-dark btn-sm">Cerrar sesion</button>
+        </form>
+    </div>
+</aside>
+
+<div th:fragment="alerts">
+    <div th:if="${successMessage}" class="alert alert-success" th:text="${successMessage}"></div>
+    <div th:if="${errorMessage}" class="alert alert-danger" th:text="${errorMessage}"></div>
+</div>
+
+</body>
+</html>

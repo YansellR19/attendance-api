@@ -36,3 +36,4 @@ build/
 ### Local env & dev database ###
 .env
 data/
+config/application*.yml
